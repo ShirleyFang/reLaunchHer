@@ -42,7 +42,6 @@ target/
 hs_err_pid*
 
 # Maven specific files
-.mvn/
 !/.mvn/wrapper/maven-wrapper.jar
 
 # Log files
