@@ -6,19 +6,22 @@ function UserComponent({ userId }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Fetch user data from the backend
+    console.log(`Fetching user data for userId: ${userId}`); // Debug log
     fetch(`/user/${userId}`)
     .then(response => {
+      console.log('Response:', response); // Debug log
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
       return response.json();
     })
     .then(data => {
+      console.log('Data received:', data); // Debug log
       setUser(data);
       setLoading(false);
     })
     .catch(error => {
+      console.error('Fetch error:', error); // Debug log
       setError(error);
       setLoading(false);
     });
