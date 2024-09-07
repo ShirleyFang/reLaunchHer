@@ -1,6 +1,6 @@
 package com.relaunchher.spring_boot_with_react.controller;
 
-import com.relaunchher.spring_boot_with_react.service.AIJobRoleRecServiceImpl;
+import com.relaunchher.spring_boot_with_react.service.AIJobRoleRecService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -8,14 +8,18 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/jobs")
+@RequestMapping("/api/job-recommendations")
 public class AIJobRoleRecController {
 
-  @Autowired
-  private AIJobRoleRecServiceImpl openAiService;
+  private final AIJobRoleRecService aiJobRoleRecService;
 
-  @PostMapping("/recommendations")
-  public String getJobRecommendations(@RequestParam String skills, @RequestParam String interests) {
-    return openAiService.getJobRecommendations(skills, interests);
+  @Autowired
+  public AIJobRoleRecController(AIJobRoleRecService aiJobRoleRecService) {
+    this.aiJobRoleRecService = aiJobRoleRecService;
+  }
+
+  @PostMapping
+  public String generateJobRoleRecommendation(@RequestParam String skills, @RequestParam String interests, @RequestParam Long userId) {
+    return aiJobRoleRecService.generateJobRoleRecommendation(skills, interests, userId);
   }
 }

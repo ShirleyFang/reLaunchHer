@@ -1,60 +1,74 @@
 package com.relaunchher.spring_boot_with_react.service;
 
-import java.util.HashMap;
+import com.relaunchher.spring_boot_with_react.dao.model.JobRole;
+import com.relaunchher.spring_boot_with_react.dao.model.JobRoleRepository;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.openai.OpenAiChatModel;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 @Service
 public class AIJobRoleRecServiceImpl implements AIJobRoleRecService {
-  @Value("${openai.api.key}")
-  private String OPENAI_API_KEY;
 
-  private final RestTemplate restTemplate;
+  private final OpenAiChatModel openAiChatModel;
+  private final JobRoleRepository jobRoleRepository;
 
-  public AIJobRoleRecServiceImpl(RestTemplate restTemplate) {
-    this.restTemplate = restTemplate;
+  @Autowired
+  public AIJobRoleRecServiceImpl(OpenAiChatModel openAiChatModel, JobRoleRepository jobRoleRepository) {
+    this.openAiChatModel = openAiChatModel;
+    this.jobRoleRepository = jobRoleRepository;
   }
 
-  public String getJobRecommendations(String skills, String interests) {
-    try {
+  @Override
+  public String generateJobRoleRecommendation(String skills, String interests, Long userId) {
+    String promptMessage = "You are a career job role suggestion engine that helps housewives generate ideas" +
+        " for how to go back into the workforce. Based on these skills: " + skills +
+        " and interests: " + interests + ", suggest 5 job roles in tech by incorporating each skill and interest." +
+        " Provide the response strictly in the following format '#. Job Role: XXX. Description: XXX.'.";
+    ChatResponse response = openAiChatModel.call(new Prompt(promptMessage));
 
-      // OpenAI API endpoint
-      String openAiUrl = "https://api.openai.com/v1/chat/completions";
+    // Extract the message content from the response
+    if (response != null && response.getResults() != null && !response.getResults().isEmpty()) {
+      String aiContent = response.getResults().get(0).getOutput().getContent();
+      List<JobRole> jobRoles = parseJobRoleRecommendations(aiContent, userId);
 
-      // Headers
-      HttpHeaders headers = new HttpHeaders();
-      headers.set("Authorization", "Bearer " + OPENAI_API_KEY);
-      headers.setContentType(MediaType.APPLICATION_JSON);
+      // Save all job roles in the database
+      jobRoleRepository.saveAll(jobRoles);  // Save all job roles at once
 
-      // Request body with the updated model
-      Map<String, Object> body = new HashMap<>();
-      body.put("model", "gpt-3.5-turbo"); // New model
-      body.put("messages", List.of(
-          Map.of("role", "system", "content", "You are a career recommendation engine."),
-          Map.of("role", "user", "content", "I have the following skills: " + skills + ". My interests are: " + interests + ". Can you recommend some job roles?")
-      ));
-
-      HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
-
-      // Execute the request
-      ResponseEntity<String> response = restTemplate.postForEntity(openAiUrl, request, String.class);
-      return response.getBody();
-
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to retrieve career recommendations", e);
+      return aiContent;
+    } else {
+      return "No job role recommendations received from OpenAI.";
     }
   }
 
+  // Method to parse and create JobRole objects
+  private List<JobRole> parseJobRoleRecommendations(String aiContent, Long userId) {
+    List<JobRole> recommendations = new ArrayList<>();
+    Pattern pattern = Pattern.compile("\\d+\\.\\s*Job Role:\\s*(.*?)\\s*Description:\\s*(.*?)");
+    Matcher matcher = pattern.matcher(aiContent);
 
-//  private String generatePrompt(String skills, String interests) {
-//    return "Given the skills: " + skills + " and interests: " + interests + ", recommend suitable career roles.";
-//  }
+    // Iterate over each match and add it to the list
+    while (matcher.find()) {
+      String jobRoleName = matcher.group(1).trim(); // Capture job role
+      String description = matcher.group(2).trim(); // Capture description
 
+      // Create a new JobRole object for each parsed job role
+      JobRole jobRole = new JobRole();
+      jobRole.setUserId(userId);
+      jobRole.setJobRole(jobRoleName);
+      jobRole.setDescription(description);
+
+      // Add jobRole to the list
+      recommendations.add(jobRole);
+    }
+
+    System.out.println("Recommendations: " + recommendations);
+
+    return recommendations;
+  }
 }

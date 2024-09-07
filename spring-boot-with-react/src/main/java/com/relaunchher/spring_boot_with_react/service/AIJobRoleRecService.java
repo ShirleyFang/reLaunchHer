@@ -1,7 +1,6 @@
 package com.relaunchher.spring_boot_with_react.service;
 
 public interface AIJobRoleRecService {
-
-  String getJobRecommendations(String skills, String interests);
-
+  String generateJobRoleRecommendation(String skills, String interests, Long userID);
 }
+
