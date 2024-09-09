@@ -5,26 +5,30 @@ function UserComponent({ userId }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    // Fetch user data from the backend
-    fetch(`/user/${userId}`)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      return response.json();
-    })
-    .then(data => {
-      setUser(data);
-      setLoading(false);
-    })
-    .catch(error => {
-      setError(error);
-      setLoading(false);
-    });
-  }, [userId]);
+    useEffect(() => {
+        console.log(`Fetching user data for userId: ${userId}`); // Debug log
+        fetch(`/user/${userId}`)
+            .then(response => {
+                console.log('Response:', response); // Debug log
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Data received:', data); // Debug log
+                setUser(data);
+                setLoading(false);
+            })
+            .catch(error => {
+                console.error('Fetch error:', error); // Debug log
+                setError(error);
+                setLoading(false);
+            });
+    }, [userId]);
 
-  if (loading) return <p>Loading user data...</p>;
+
+    if (loading) return <p>Loading user data...</p>;
   if (error) return <p>Error: {error.message}</p>;
 
   return (

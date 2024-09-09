@@ -10,9 +10,19 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class AIJobListingServiceImpl implements AIJobListingService {
+
+    private static final Pattern companyPattern = Pattern.compile("^Company Name: (.+)$");
+    private static final Pattern jobTitlePattern = Pattern.compile("^Job Title: (.+)$");
+    private static final Pattern jobLevelPattern = Pattern.compile("^Job Level: (.+)$");
+    private static final Pattern jobRequirementsPattern = Pattern.compile("^Job Requirements: (.+)$");
+    private static final Pattern remotePattern = Pattern.compile("^Remote Work: (yes|no)$");
+    private static final Pattern dayCarePattern = Pattern.compile("^Provides Day Care: (yes|no)$");
+    private static final Pattern linkPattern = Pattern.compile("^Link to application: (.+)$");
 
     @Autowired
     private final OpenAiChatModel openAiChatModel;
@@ -62,14 +72,13 @@ public class AIJobListingServiceImpl implements AIJobListingService {
         }
 
         promptBuilder.append("Please provide the job listings in the following format:\n")
-                .append("1: Company name: [xxx]\n")
-                .append("2: Job Title: [xxx]\n")
-                .append("3: Job Level: [xxx]\n")
-                .append("4: Job Requirements: [xxx]\n")
-                .append("5: Remote work: [yes/no]\n")
-                .append("6: Provides day care: [yes/no]\n")
-                .append("7: Link to application: [xxx]");
-
+                .append("Company Name: [xxx]\n")
+                .append("Job Title: [xxx]\n")
+                .append("Job Level: [xxx]\n")
+                .append("Job Requirements: [xxx]\n")
+                .append("Remote Work: [yes/no]\n")
+                .append("Provides Day Care: [yes/no]\n")
+                .append("Link to application: [xxx]");
 
         return promptBuilder.toString();
     }
@@ -77,36 +86,53 @@ public class AIJobListingServiceImpl implements AIJobListingService {
     private List<JobListing> parseJobListings(String responseContent, Integer numPostings) {
         List<JobListing> jobListings = new ArrayList<>();
 
-        // Split response into individual job listings using a double newline as a delimiter
+        // Split response into individual job listings
         String[] listings = responseContent.split("\n\n");
 
         for (int i = 0; i < listings.length && i < numPostings; i++) {
             String listing = listings[i];
 
-            // Parse individual job listing data, assuming each line follows the requested format
+            String companyName = "N/A";
+            String jobTitle = "N/A";
+            String jobLevel = "N/A";
+            String jobRequirements = "N/A";
+            boolean isRemote = false;
+            boolean providesDayCare = false;
+            String applicationLink = "N/A";
+
             String[] lines = listing.split("\n");
-            if (lines.length >= 6) {
-                try {
-                    String companyName = lines[0].split(":")[1].trim();
-                    String jobTitle = lines[1].split(":")[1].trim();
-                    String jobLevel = lines[2].split(":")[1].trim();
-                    String jobRequirements = lines[3].split(":")[1].trim();
-                    boolean isRemote = lines[4].split(":")[1].trim().equalsIgnoreCase("yes");
-                    boolean providesDayCare = lines[5].split(":")[1].trim().equalsIgnoreCase("yes");
-                    String applicationLink = lines.length > 6 ? lines[6].split(":")[1].trim() : "";
 
-                    // Create JobListing object
-                    JobListing jobListing = new JobListing(companyName, jobTitle, jobLevel, jobRequirements, isRemote, providesDayCare, applicationLink);
-                    jobListings.add(jobListing);
+            for (String line : lines) {
+
+                Matcher companyMatcher = companyPattern.matcher(line);
+                Matcher titleMatcher = jobTitlePattern.matcher(line);
+                Matcher levelMatcher = jobLevelPattern.matcher(line);
+                Matcher requirementsMatcher = jobRequirementsPattern.matcher(line);
+                Matcher remoteMatcher = remotePattern.matcher(line);
+                Matcher dayCareMatcher = dayCarePattern.matcher(line);
+                Matcher linkMatcher = linkPattern.matcher(line);
+
+                if (companyMatcher.matches()) {
+                    companyName = companyMatcher.group(1);
+                } else if (titleMatcher.matches()) {
+                    jobTitle = titleMatcher.group(1);
+                } else if (levelMatcher.matches()) {
+                    jobLevel = levelMatcher.group(1);
+                } else if (requirementsMatcher.matches()) {
+                    jobRequirements = requirementsMatcher.group(1);
+                } else if (remoteMatcher.matches()) {
+                    isRemote = remoteMatcher.group(1).equalsIgnoreCase("yes");
+                } else if (dayCareMatcher.matches()) {
+                    providesDayCare = dayCareMatcher.group(1).equalsIgnoreCase("yes");
+                } else if (linkMatcher.matches()) {
+                    applicationLink = linkMatcher.group(1);
                 }
-                catch (Exception e) {
-                    System.err.println("Error parsing listing: " + listing + ". Error: " + e.getMessage());
-                }
-        } else {
-            System.err.println("Malformed job listing: " + listing);
+
+            }
+
+            JobListing jobListing = new JobListing(companyName, jobTitle, jobLevel, jobRequirements, isRemote, providesDayCare, applicationLink);
+            jobListings.add(jobListing);
         }
-
-    }
 
         return jobListings;
 
