@@ -86,19 +86,27 @@ public class AIJobListingServiceImpl implements AIJobListingService {
             // Parse individual job listing data, assuming each line follows the requested format
             String[] lines = listing.split("\n");
             if (lines.length >= 6) {
-                String companyName = lines[0].split(":")[1].trim();
-                String jobTitle = lines[1].split(":")[1].trim();
-                String jobLevel = lines[2].split(":")[1].trim();
-                String jobRequirements = lines[3].split(":")[1].trim();
-                boolean isRemote = lines[4].split(":")[1].trim().equalsIgnoreCase("yes");
-                boolean providesDayCare = lines[5].split(":")[1].trim().equalsIgnoreCase("yes");
-                String applicationLink = lines.length > 6 ? lines[6].split(":")[1].trim() : "";
+                try {
+                    String companyName = lines[0].split(":")[1].trim();
+                    String jobTitle = lines[1].split(":")[1].trim();
+                    String jobLevel = lines[2].split(":")[1].trim();
+                    String jobRequirements = lines[3].split(":")[1].trim();
+                    boolean isRemote = lines[4].split(":")[1].trim().equalsIgnoreCase("yes");
+                    boolean providesDayCare = lines[5].split(":")[1].trim().equalsIgnoreCase("yes");
+                    String applicationLink = lines.length > 6 ? lines[6].split(":")[1].trim() : "";
 
-                // Create JobListing object
-                JobListing jobListing = new JobListing(companyName, jobTitle, jobLevel, jobRequirements, isRemote, providesDayCare, applicationLink);
-                jobListings.add(jobListing);
-            }
+                    // Create JobListing object
+                    JobListing jobListing = new JobListing(companyName, jobTitle, jobLevel, jobRequirements, isRemote, providesDayCare, applicationLink);
+                    jobListings.add(jobListing);
+                }
+                catch (Exception e) {
+                    System.err.println("Error parsing listing: " + listing + ". Error: " + e.getMessage());
+                }
+        } else {
+            System.err.println("Malformed job listing: " + listing);
         }
+
+    }
 
         return jobListings;
 
