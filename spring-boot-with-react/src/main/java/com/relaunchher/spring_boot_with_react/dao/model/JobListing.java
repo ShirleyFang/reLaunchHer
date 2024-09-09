@@ -67,8 +67,8 @@ public class JobListing {
     @Override
     public String toString() {
 
-        String isRemoteString = isRemote ? "Yes" : "False";
-        String providesDayCareString = providesDayCare ? "Yes" : "False";
+        String isRemoteString = isRemote ? "Yes" : "No";
+        String providesDayCareString = providesDayCare ? "Yes" : "No";
 
         return "JobListing{" +
                 "companyName='" + companyName + '\'' +
