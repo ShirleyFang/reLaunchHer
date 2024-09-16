@@ -1,12 +1,13 @@
-// src/components/JobRecommendation.js
 import React, { useState } from 'react';
 import axios from 'axios';
+import './JobRecommendationComponent.css';
 
 const JobRecommendation = () => {
   const [skills, setSkills] = useState('');
   const [interests, setInterests] = useState('');
   const [userId, setUserId] = useState(1); // Example userId
-  const [response, setResponse] = useState('');
+  const [jobRoles, setJobRoles] = useState([]);
+  const [selectedRole, setSelectedRole] = useState('');
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -18,16 +19,25 @@ const JobRecommendation = () => {
           userId: userId
         }
       });
-      // Print response to the console and set it to state
-      console.log('Response from backend:', result.data);
-      setResponse(result.data);
+
+      // Process response to set job roles
+      setJobRoles(result.data);
     } catch (error) {
       console.error('Error fetching data:', error);
     }
   };
 
+  const handleRoleChange = (event) => {
+    setSelectedRole(event.target.value);
+  };
+
+  const handleRoleSubmit = () => {
+    // Handle the selected job role
+    console.log('Selected Job Role:', selectedRole);
+  };
+
   return (
-      <div>
+      <div className="container">
         <h2>Get Job Recommendations</h2>
         <form onSubmit={handleSubmit}>
           <div>
@@ -56,10 +66,36 @@ const JobRecommendation = () => {
           </div>
           <button type="submit">Get Recommendations</button>
         </form>
-        <div>
-          <h3>Response:</h3>
-          <pre>{response}</pre>
+        <div className="job-role-container">
+          {jobRoles.length > 0 ? (
+              <div className="radio-group">
+                {jobRoles.map((role, index) => (
+                    <div key={index} className="job-role-item">
+                      <label>
+                        <input
+                            type="radio"
+                            name="jobRole"
+                            value={role.jobRole}
+                            checked={selectedRole === role.jobRole}
+                            onChange={handleRoleChange}
+                        />
+                        <strong>{role.jobRole}</strong>
+                      </label>
+                      {selectedRole === role.jobRole && (
+                          <div className="job-description">
+                            <p>{role.description}</p>
+                          </div>
+                      )}
+                    </div>
+                ))}
+              </div>
+          ) : (
+              <p>No job roles available. Please submit your skills and interests.</p>
+          )}
         </div>
+        {selectedRole && (
+            <button onClick={handleRoleSubmit}>Submit Selected Role</button>
+        )}
       </div>
   );
 };

@@ -12,7 +12,7 @@ function App() {
       //   <UserComponent userId={userId} />
       // </div>
       <div className="App">
-        <h1>Job Recommendation System</h1>
+        <h1>reLaunchHer</h1>
         <JobRecommendation/>
       </div>
   );

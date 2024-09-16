@@ -1,6 +1,8 @@
 package com.relaunchher.spring_boot_with_react.controller;
 
+import com.relaunchher.spring_boot_with_react.dao.model.JobRole;
 import com.relaunchher.spring_boot_with_react.service.AIJobRoleRecService;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,7 +21,7 @@ public class AIJobRoleRecController {
   }
 
   @PostMapping
-  public String generateJobRoleRecommendation(@RequestParam String skills, @RequestParam String interests, @RequestParam Long userId) {
+  public List<JobRole> generateJobRoleRecommendation(@RequestParam String skills, @RequestParam String interests, @RequestParam Long userId) {
     return aiJobRoleRecService.generateJobRoleRecommendation(skills, interests, userId);
   }
 }

@@ -25,7 +25,7 @@ public class AIJobRoleRecServiceImpl implements AIJobRoleRecService {
   }
 
   @Override
-  public String generateJobRoleRecommendation(String skills, String interests, Long userId) {
+  public List<JobRole> generateJobRoleRecommendation(String skills, String interests, Long userId) {
     String promptMessage = "You are a career job role suggestion engine that helps housewives generate ideas" +
         " for how to go back into the workforce. Based on these skills: " + skills +
         " and interests: " + interests + ", suggest 5 job roles in tech by incorporating each skill and interest." +
@@ -39,23 +39,27 @@ public class AIJobRoleRecServiceImpl implements AIJobRoleRecService {
 
       // Save all job roles in the database
       jobRoleRepository.saveAll(jobRoles);  // Save all job roles at once
-
-      return aiContent;
+      System.out.println(aiContent);
+      return jobRoles;
     } else {
-      return "No job role recommendations received from OpenAI.";
+      return new ArrayList<>(); // Return an empty list if no response received
     }
   }
 
   // Method to parse and create JobRole objects
   private List<JobRole> parseJobRoleRecommendations(String aiContent, Long userId) {
     List<JobRole> recommendations = new ArrayList<>();
-    Pattern pattern = Pattern.compile("\\d+\\.\\s*Job Role:\\s*(.*?)\\s*Description:\\s*(.*?)");
+    // Pattern to match job roles and descriptions
+    Pattern pattern = Pattern.compile(
+        "(\\d+)\\.\\s*Job Role:\\s*([^\\.]+?)\\.\\s*Description:\\s*([^\\d]+)",
+        Pattern.MULTILINE
+    );
     Matcher matcher = pattern.matcher(aiContent);
 
     // Iterate over each match and add it to the list
     while (matcher.find()) {
-      String jobRoleName = matcher.group(1).trim(); // Capture job role
-      String description = matcher.group(2).trim(); // Capture description
+      String jobRoleName = matcher.group(2).trim(); // Capture job role
+      String description = matcher.group(3).trim(); // Capture description
 
       // Create a new JobRole object for each parsed job role
       JobRole jobRole = new JobRole();
